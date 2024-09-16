@@ -41,4 +41,4 @@ class Weather():
 
 if __name__ == "__main__":
     weather = Weather()
-    print(weather.get_data(weather_key, city, state))
+    print(weather.get_data(weather_key, lat, lon))
