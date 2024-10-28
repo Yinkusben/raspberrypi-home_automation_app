@@ -15,6 +15,7 @@ keys.py
 # Google calendar credentials
 credentials.json
 token.pickle
+token.json
 
 # DS_STORE
 .DS_Store
