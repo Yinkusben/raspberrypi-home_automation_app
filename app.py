@@ -3,7 +3,6 @@ from keys import weather_key, lat, lon, city, state
 from gcalendar import Gcalendar
 from weather import Weather
 from datetime import datetime
-import grocery
 import todos
 
 
@@ -67,6 +66,5 @@ def update_todo(todo_id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    grocery.initialize()
     todos.initialize()
     app.run(debug=True, host='0.0.0.0', port=8000)

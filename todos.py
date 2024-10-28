@@ -84,7 +84,7 @@ def get_all_todos():
 
 if __name__ == '__main__':
     initialize()
-    create_todo("Walk the dog", "High", '2024-10-10')
+    create_todo("My first todo item", "Low", '2024-10-10')
 
     # for todo in get_all_todos():
     #     print(type(todo.creation_date))

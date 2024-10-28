@@ -1,0 +1,168 @@
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f0f2f5;
+  padding: 20px;
+}
+
+/*Jumbotron styling*/
+.bg-image {
+  height: 400px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.text-white h1 {
+  font-size: 4rem;
+  font-weight: 700;
+}
+
+.btn-outline-light {
+  border: 2px solid white;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+  background-color: white;
+  color: black;
+}
+
+.mask {
+  background-color: rgba(0, 0, 0, 0.6); /* Darken background for text visibility */
+}
+
+/* Adjust positioning for weather and calendar */
+.weather-calendar-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 30px; /* Adds space on the extreme sides */
+}
+
+.weather-section {
+  margin-left: auto;
+}
+
+.calendar-section {
+  margin-right: auto;
+}
+
+
+/* Weather and Calendar styling */
+ul.list-unstyled li {
+  margin-bottom: 10px;
+}
+
+.card-title {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.card-text {
+  font-size: 1rem;
+  color: #777;
+}
+
+.card {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+i.fa-thermometer-half, i.fa-cloud-sun, i.fa-sun, i.fa-cloud {
+  color: #ffdd57; /* Customize icon colors for weather */
+}
+
+i.fa-trash-alt {
+  color: #ff4444;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: #1266f1;
+  color: white;
+  border-radius: 8px;
+}
+
+/* Hide inactive tab content completely */
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block; /* Only the active tab should be visible */
+}
+
+.todo-header, .automation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.todo-table-header {
+  font-weight: bold;
+  padding: 10px 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.todo-actions {
+  display: flex;
+  align-items: center;
+}
+
+.delete-icon {
+  margin-left: 10px !important; /* Add some space between the select and delete icon */
+  color: #ff4444;
+  cursor: pointer;
+}
+
+.todo-name.completed {
+  text-decoration: line-through;
+  color: #aaa;
+}
+
+.status-label {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.status-pending {
+  background-color: #ff4444;
+  color: white;
+}
+
+.status-in-progress {
+  background-color: #ffbb33;
+  color: white;
+}
+
+.status-completed {
+  background-color: #00c851;
+  color: white;
+}
+
+.add-icon {
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #1266f1;
+}
+
+.delete-icon {
+  color: #ff4444;
+  cursor: pointer;
+}
