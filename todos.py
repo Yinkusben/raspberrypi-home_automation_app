@@ -1,36 +1,7 @@
-from sqlalchemy import create_engine, Column, Integer, String, Date, Boolean, case
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import case
 from datetime import datetime
 from copy import deepcopy
-
-# Create the SQLAlchemy engine
-DATABASE_URL = 'sqlite:///todos.db'
-engine = create_engine(DATABASE_URL, echo=False)
-
-# Base class for declarative models
-Base = declarative_base()
-
-# SQLAlchemy session setup
-Session = sessionmaker(bind=engine)
-session = Session()
-
-class Todos(Base):
-    __tablename__ = 'todos'
-
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    priority = Column(String, nullable=False)
-    status = Column(String, default="Not-started")
-    creation_date = Column(Date, default=datetime.now())
-    due_date = Column(Date, nullable=True)
-
-    def __repr__(self):
-        return f"<Todos(title={self.title}, priority={self.priority}, status={self.status})>"
-
-# Initialize the database (create tables)
-def initialize():
-    Base.metadata.create_all(engine)
+from models import Todos, session
 
 # Create a new todo
 def create_todo(title, priority, due_date):
@@ -72,20 +43,21 @@ def get_all_todos():
         ).asc()
     ).all()
 
-    if todo_list:
-        my_todo_list = deepcopy(todo_list)
+    my_todo_list = deepcopy(todo_list)
 
-        for todo in my_todo_list:  # format the creation And due date
+    if my_todo_list:
+        # format the creation And due date
+        for todo in my_todo_list:
             todo.creation_date = todo.creation_date.strftime('%a-%d-%b.')
-            if todo.due_date:   #Check if there's due date and format it
+            if todo.due_date:
                 todo.due_date = todo.due_date.strftime('%a-%d-%b.')
+    else:
+        #If there is no todos, create one
+        create_todo("My First ToDo", "Low", '')
+        return get_all_todos()
 
     return my_todo_list
 
 if __name__ == '__main__':
-    initialize()
-    create_todo("My first todo item", "Low", '2024-10-10')
-
-    # for todo in get_all_todos():
-    #     print(type(todo.creation_date))
-    # delete_todo_by_id(3)
+    for todo in get_all_todos():
+        print(todo)
