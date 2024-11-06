@@ -31,10 +31,10 @@ class Device(Base):
     device_name = Column(String, nullable=False, unique=True)
     type = Column(String, nullable=False)
     gpio_pin = Column(Integer, nullable=False)
-    default_state = Column(Integer)
+    state = Column(Integer)
 
     def __repr__(self):
-        return f"<Device name={self.device_name}, type={self.type}, GPIO_pin={self.gpio_pin}>"
+        return f"<Device name={self.device_name}, type={self.type}, GPIO_pin={self.gpio_pin}, state={self.state}>"
     
 # Initialize the database (create tables)
 Base.metadata.create_all(engine)

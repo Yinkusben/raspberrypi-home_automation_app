@@ -262,28 +262,110 @@
                 </div>
             </div>
             <!--Todo Section ends here-->
-                  <!-- Home Automation Section -->
-      <div class="tab-pane fade inactive" id="automation" role="tabpanel" aria-labelledby="automation-tab">
-        <div class="automation-header mb-3">
-          <h4><i class="fas fa-plug"></i> GPIO Control</h4>
-        </div>
-        <div class="form-group">
-          <div class="d-flex align-items-center">
-            <label for="gpio1" class="form-label me-2">GPIO 1</label>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="gpio1">
+
+<!-- Home Automation Tab Section -->
+<div class="tab-pane fade" id="automation" role="tabpanel" aria-labelledby="automation-tab">
+    <div class="automation-header mb-3 d-flex justify-content-between align-items-center">
+      <h4><i class="fas fa-plug"></i> Home Automation Devices</h4>
+      <button class="btn btn-primary" data-mdb-toggle="modal" data-mdb-modal-init data-mdb-target="#addDeviceModal">
+        <i class="fas fa-plus"></i> Add Device
+      </button>
+    </div>
+  
+    <!-- Devices List -->
+    <div id="devices-list">
+      {% for device in devices %}
+      <div class="device-item card mb-3">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div class="device-info d-flex align-items-center">
+            <i class="fas fa-{{ device.icon }} fa-2x me-3"></i>
+            <div>
+              <h5 class="card-title mb-1">{{ device.device_name }}</h5>
+              <p class="card-text">{{ device.type }} - GPIO: {{ device.gpio_pin }}</p>
             </div>
           </div>
-        </div>
-        <div class="form-group">
-          <div class="d-flex align-items-center">
-            <label for="gpio2" class="form-label me-2">GPIO 2</label>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="gpio2">
-            </div>
+  
+          <!-- Device Controls -->
+          <div class="device-control">
+            {% if device.type in ["LED", "Switch", "Relay"] %}
+              <!-- Toggle Switch for ON/OFF devices -->
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="device-{{ device.id }}" 
+                       {% if device.state == 1 %}checked{% endif %}
+                       onclick="toggleDevice({{ device.id }})">
+                <label class="form-check-label" for="device-{{ device.id }}">Toggle</label>
+              </div>
+            {% elif device.type == "LED Brightness" or device.type == "PWM Controlled" %}
+              <!-- Slider for brightness or PWM controlled devices -->
+              <label for="brightness-{{ device.id }}" class="form-label">Brightness</label>
+              <input type="range" class="form-range" min="0" max="100" id="brightness-{{ device.id }}" 
+                     value="{{ device.brightness or 50 }}" 
+                     oninput="adjustBrightness({{ device.id }})">
+            {% elif device.type in ["Temp sensor", "Humidity sensor", "Current sensor", "Voltage sensor"] %}
+              <!-- Display for sensors with readings -->
+              <p class="fs-6" id="sensor-{{ device.id }}-reading">
+                {{ device.reading }} {{ device.unit }}
+              </p>
+              <button class="btn btn-info btn-sm" onclick="fetchSensorData({{ device.id }})">Refresh</button>
+            {% endif %}
           </div>
         </div>
       </div>
+      {% endfor %}
+    </div>
+  </div>  
+  
+  <!-- Add Device Modal -->
+  <div class="modal fade" id="addDeviceModal" tabindex="-1" aria-labelledby="addDeviceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addDeviceModalLabel">Add New Device</h5>
+          <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form action="{{ url_for('add_device') }}" method="POST">
+            <div class="mb-3">
+              <label for="board" class="form-label">Board</label>
+              <select class="form-select" name="board" id="board" required>
+                <option value="Raspberry Pi">Raspberry Pi</option>
+                <option value="ESP32">ESP32</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="device_name" class="form-label">Device Name</label>
+              <input type="text" class="form-control" id="device_name" name="device_name" required>
+            </div>
+            <div class="mb-3">
+              <label for="device_type" class="form-label">Device Type</label>
+              <select class="form-select" name="device_type" id="device_type" required>
+                <option value="LED">LED</option>
+                <option value="Switch">Switch</option>
+                <option value="Relay">Relay</option>
+                <option value="Temp sensor">Temperature Sensor</option>
+                <option value="Humidity sensor">Humidity Sensor</option>
+                <option value="Current sensor">Current Sensor</option>
+                <option value="Voltage sensor">Voltage Sensor</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="gpio" class="form-label">GPIO</label>
+              <input type="number" class="form-control" id="gpio" name="gpio" required>
+            </div>
+            <div class="mb-3">
+              <label for="default_state" class="form-label">Default State</label>
+              <select class="form-select" name="default_state" id="default_state" required>
+                <option value="ON">ON</option>
+                <option value="OFF">OFF</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Device</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>  
       <!--Home Automation section ends here-->
             
             </div>

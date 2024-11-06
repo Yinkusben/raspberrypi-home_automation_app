@@ -8,6 +8,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.auth.exceptions import GoogleAuthError
 
+# Paths for token and credentials files
+TOKEN_PATH = 'token.pickle'
+CREDENTIALS_PATH = 'credentials.json'
+SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+
 class Gcalendar:
     def __init__(self):
         self.events = []
@@ -18,49 +23,62 @@ class Gcalendar:
         SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
         creds = None
 
+        # Load or refresh credentials from token.pickle
+        if os.path.exists(TOKEN_PATH):
+            with open(TOKEN_PATH, 'rb') as token:
+                creds = pickle.load(token)
+
         try:
-            # Load or refresh credentials from token.pickle
-            if os.path.exists('token.pickle'):
-                with open('token.pickle', 'rb') as token:
-                    creds = pickle.load(token)
-            
-            # If no credentials or they are expired, refresh or get new ones
+            # Refresh the token if it's expired
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+
+            # If no valid credentials, run OAuth flow to generate new ones
             if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-                    creds = flow.run_local_server(port=0)
+                flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+                creds = flow.run_local_server(port=0)
                 
-                # Save the credentials for the next run
-                with open('token.pickle', 'wb') as token:
-                    pickle.dump(creds, token)
-            
-            # Build the service to interact with the Google Calendar API
-            service = build('calendar', 'v3', credentials=creds)
-
-            # Call the Calendar API to retrieve events
-            now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
-            events_result = service.events().list(
-                calendarId=cal_key, timeMin=now, maxResults=2, 
-                singleEvents=True, orderBy='startTime'
-            ).execute()
-
-            events = events_result.get('items', [])
-            if not events:
-                return 'No upcoming events found.'
-
-            return self.set_data(events)
+            # Save the refreshed or new token to file
+            with open(TOKEN_PATH, 'wb') as token:
+                pickle.dump(creds, token)
 
         except GoogleAuthError as e:
-            # Handle Google authentication errors
-            print(f"GoogleAuthError: {e}")
-            return []
+            # Handle invalid_grant error by removing the token and restarting OAuth flow
+            if 'invalid_grant' in str(e):
+                print("Token has been expired or revoked. Re-authenticating...")
+                if os.path.exists(TOKEN_PATH):
+                    os.remove(TOKEN_PATH)  # Delete the invalid token file
+                # Run the OAuth flow to get new credentials
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    CREDENTIALS_PATH, SCOPES)
+                creds = flow.run_local_server(port=0)
+                # Save the new token
+                with open(TOKEN_PATH, 'wb') as token:
+                    pickle.dump(creds, token)
+            else:
+                print(f"GoogleAuthError: {e}")  # Raise any other exceptions
+                return []
 
         except Exception as e:
             # Catch any other exceptions and log the error
             print(f"An error occurred while fetching Google Calendar events: {e}")
             return []
+
+        # Build the service to interact with the Google Calendar API
+        service = build('calendar', 'v3', credentials=creds)
+
+        # Call the Calendar API to retrieve events
+        now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+        events_result = service.events().list(
+            calendarId=cal_key, timeMin=now, maxResults=2, 
+            singleEvents=True, orderBy='startTime'
+        ).execute()
+
+        events = events_result.get('items', [])
+        if not events:
+            return 'No upcoming events found.'
+
+        return self.set_data(events)
 
     def set_data(self, events):
         """Formats the retrieved events."""
