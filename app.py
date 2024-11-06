@@ -1,4 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, request, jsonify
+from flask_socketio import SocketIO, emit
 from keys import weather_key, lat, lon, city, state
 from gcalendar import Gcalendar
 from weather import Weather
@@ -24,6 +25,8 @@ def today_date():
     return date.strftime("%A, %B %d")
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'home_server'
+socketio = SocketIO(app)  # Initialize Flask-SocketIO
 
 @app.route('/')
 def index():
@@ -74,37 +77,22 @@ def add_device():
     device_name = request.form.get('device_name')
     device_type = request.form.get('device_type')
     GPIO_pin = request.form.get('gpio')
-    default_state = request.form.get('default_state')
 
     automation.create_device(board=board, name=device_name, type=device_type, gpio_pin=GPIO_pin)
     return redirect(url_for('index'))
 
-# Route to toggle a device state (ON/OFF)
-@app.route('/toggle_device/<int:device_id>', methods=['POST'])
-def toggle_device(device_id):
+# Handle device ON/OFF control
+@socketio.on('toggle_device')
+def toggle_device(data):
     print('toggling')
-    if automation.control_device(device_id, toggle=True):
-        return jsonify({"status": "success", "new_state": automation.get_device(device_id).state})
+    device_id = data.get('device_id')
+    state = data.get('state')
     
-    return jsonify({"status": "error", "message": "Device not found"}), 404
-
-# Route to adjust device brightness or PWM value
-@app.route('/adjust_brightness/<int:device_id>', methods=['POST'])
-def adjust_brightness(device_id):
-    brightness = request.form.get('brightness')
-    if automation.control_device(device_id=device_id, value=brightness, PWM=True):
-        return jsonify({"status": "success", "brightness": device.brightness})
-    return jsonify({"status": "error", "message": "Device not found or invalid brightness"}), 404
-
-# Route to fetch sensor data (for display purposes)
-# @app.route('/fetch_sensor_data/<int:device_id>', methods=['GET'])
-# def fetch_sensor_data(device_id):
-#     device = session.query(Devices).get(device_id)
-#     if device and device.type in ["Temp sensor", "Humidity sensor", "Current sensor", "Voltage sensor"]:
-#         # Fetch and return sensor reading (value stored in the database or fetched in real-time)
-#         return jsonify({"status": "success", "reading": device.reading, "unit": device.unit})
-#     return jsonify({"status": "error", "message": "Sensor not found or invalid device type"}), 404
-
+    if automation.control_device(device_id, state):
+        emit('device_state_updated', {'device_id': device_id, 'new_state': state}, broadcast=True)
+    else:
+        emit('device_state_updated', {'device_id': device_id, 'new_state': not state}, broadcast=True)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    # app.run(debug=True, host='0.0.0.0', port=8000)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

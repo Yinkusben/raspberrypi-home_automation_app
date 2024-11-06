@@ -12,46 +12,47 @@ window.addEventListener("load", function() {
   }
 });
 
-  // Toggle Device State
-  function toggleDevice(deviceId) {
-    fetch(`/toggle_device/${deviceId}`, { method: 'POST' })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          document.getElementById(`device-${deviceId}-state`).innerText = data.new_state;
-        } else {
-          alert(data.message);
-        }
-      });
+ // Initialize the Socket.IO connection
+const socket = io();  // This connects to the Socket.IO server
+
+// Function to toggle device state based on checkbox
+function toggleDevice(deviceId) {
+    const checkbox = document.getElementById(`device-${deviceId}`);
+    const state = checkbox.checked ? 1 : 0;  // Determine state based on checkbox
+
+    socket.emit('toggle_device', { device_id: deviceId, state: state });
+}
+
+// Function to adjust device brightness
+function adjustBrightness(deviceId) {
+  const brightness = document.getElementById(`brightness-${deviceId}`).value;
+  socket.emit('adjust_brightness', { device_id: deviceId, brightness: brightness });
+}
+
+// Listen for state updates from the server
+socket.on('device_state_updated', (data) => {
+    const deviceId = data.device_id;
+    const newState = data.new_state;
+
+    // Update the checkbox based on the new state
+    const checkbox = document.getElementById(`device-${deviceId}`);
+    if (checkbox) {
+        checkbox.checked = (newState === 1);  // Set checkbox state
+    }
+
+    console.log(`Device ${deviceId} turned ${newState}`);
+});
+
+// Listen for brightness updates from the server
+socket.on('brightness_updated', (data) => {
+  const deviceId = data.device_id;
+  const brightness = data.brightness;
+
+  // Update the slider value for brightness on the UI
+  const slider = document.getElementById(`brightness-${deviceId}`);
+  if (slider) {
+      slider.value = brightness;  // Set the slider's value to the updated brightness
   }
 
-  // Adjust Device Brightness
-  function adjustBrightness(deviceId) {
-    const brightness = document.getElementById(`brightness-${deviceId}`).value;
-    fetch(`/adjust_brightness/${deviceId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `brightness=${brightness}`
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        alert(`Brightness set to ${data.brightness}`);
-      } else {
-        alert(data.message);
-      }
-    });
-  }
-
-  // Fetch Sensor Data (Temperature, Humidity, etc.)
-  function fetchSensorData(deviceId) {
-    fetch(`/fetch_sensor_data/${deviceId}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          document.getElementById(`sensor-${deviceId}-reading`).innerText = `${data.reading} ${data.unit}`;
-        } else {
-          alert(data.message);
-        }
-      });
-  }
+  console.log(`Device ${deviceId} brightness set to ${brightness}`);
+});
