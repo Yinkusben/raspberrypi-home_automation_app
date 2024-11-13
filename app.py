@@ -17,7 +17,7 @@ my_cal = Gcalendar()
 get_events = my_cal.gcal_connect()
 
 #Setup devices
-automation.setup_devices()
+# automation.setup_devices()
 
 # Today's date for header
 def today_date():
@@ -76,7 +76,7 @@ def add_device():
     board = request.form.get('board')
     device_name = request.form.get('device_name')
     device_type = request.form.get('device_type')
-    GPIO_pin = request.form.get('gpio')
+    GPIO_pin = int(request.form.get('gpio'))
 
     automation.create_device(board=board, name=device_name, type=device_type, gpio_pin=GPIO_pin)
     return redirect(url_for('index'))
@@ -93,6 +93,22 @@ def toggle_device(data):
     else:
         emit('device_state_updated', {'device_id': device_id, 'new_state': not state}, broadcast=True)
 
+# Handle brightness control for PWM devices
+@socketio.on('adjust_brightness')
+def adjust_brightness(data):
+    print("Adjusing brightness")
+    device_id = data.get('device_id')
+    brightness = data.get('brightness')
+
+    if automation.control_device(device_id, brightness):
+        emit('brightness_updated', {'device_id': device_id, 'brightness': brightness}, broadcast=True)
+
+# @app.teardown_appcontext
+# def cleanup_gpio(exception=None):
+#     automation.cleanup()
+#     print("GPIO resources released")
+
 if __name__ == '__main__':
     # app.run(debug=True, host='0.0.0.0', port=8000)
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    automation.setup_devices()
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False)

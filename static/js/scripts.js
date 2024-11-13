@@ -18,7 +18,7 @@ const socket = io();  // This connects to the Socket.IO server
 // Function to toggle device state based on checkbox
 function toggleDevice(deviceId) {
     const checkbox = document.getElementById(`device-${deviceId}`);
-    const state = checkbox.checked ? 1 : 0;  // Determine state based on checkbox
+    const state = checkbox.checked ? 1 : 0;
 
     socket.emit('toggle_device', { device_id: deviceId, state: state });
 }
@@ -37,7 +37,7 @@ socket.on('device_state_updated', (data) => {
     // Update the checkbox based on the new state
     const checkbox = document.getElementById(`device-${deviceId}`);
     if (checkbox) {
-        checkbox.checked = (newState === 1);  // Set checkbox state
+        checkbox.checked = (newState >= 1);  // Set checkbox state
     }
 
     console.log(`Device ${deviceId} turned ${newState}`);

@@ -85,7 +85,6 @@
   </div>
 </div>
 
-
   <!--A section container-->
     <div class="container">
           <div class="card" id="list1" style="border-radius: .75rem; background-color: #eff1f2;">
@@ -266,81 +265,55 @@
 
 <!-- Home Automation Tab Section -->
 <div class="tab-pane fade" id="automation" role="tabpanel" aria-labelledby="automation-tab">
-  <div class="automation-header mb-3 d-flex justify-content-between align-items-center">
-    <h4><i class="fas fa-plug"></i> Home Automation Devices</h4>
-    <button class="btn btn-primary" data-mdb-tooltip-init title="Add device" data-mdb-modal-init data-mdb-target="#addDeviceModal">
-      <i class="fas fa-plus"></i> Add Device
-    </button>
-  </div>
-
-  <!-- Devices List -->
-  <div id="devices-list">
-    {% for device in devices %}
-    <div class="device-item card mb-3">
-      <div class="card-body d-flex justify-content-between align-items-center">
-        
-        <!-- Device Information and Controls (Horizontal Alignment) -->
-        <div class="d-flex align-items-center w-100">
-          
-          <!-- Device Icon and Info (aligned to the left) -->
-          <div class="device-info d-flex align-items-center me-3">
+    <div class="automation-header mb-3 d-flex justify-content-between align-items-center">
+      <h4><i class="fas fa-plug"></i> Home Automation Devices</h4>
+      <button class="btn btn-primary" data-mdb-toggle="modal" data-mdb-modal-init data-mdb-target="#addDeviceModal">
+        <i class="fas fa-plus"></i> Add Device
+      </button>
+    </div>
+  
+    <!-- Devices List -->
+    <div id="devices-list">
+      {% for device in devices %}
+      <div class="device-item card mb-3">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div class="device-info d-flex align-items-center">
             <i class="fas fa-{{ device.icon }} fa-2x me-3"></i>
-              <h5 class="me-3">{{ device.device_name }}</h5>
-              <p class="mb-0">{{ device.type }}</p>
+            <div>
+              <h5 class="card-title mb-1">{{ device.device_name }}</h5>
+              <p class="card-text">{{ device.type }} - GPIO: {{ device.gpio_pin }}</p>
+            </div>
           </div>
-
-          <!-- Device Controls (aligned to the right) -->
-          <div class="device-control d-flex align-items-center ms-auto">
-            {% if device.type == "LED" %}
-              <!-- Light Control: Slider for brightness and checkbox for ON/OFF -->
-              <label for="brightness-{{ device.id }}" class="form-label me-2">Brightness</label>
-              <input type="range" class="form-range me-3" min="2" max="100" id="brightness-{{ device.id }}" 
-                     value="{{ device.state }}" 
-                     oninput="adjustBrightness({{ device.id }})">
+  
+          <!-- Device Controls -->
+          <div class="device-control">
+            {% if device.type in ["LED", "Switch", "Relay"] %}
+              <!-- Toggle Switch for ON/OFF devices -->
               <div class="form-check form-switch">
-                <label class="form-check-label" for="device-{{ device.id }}">Toggle</label>
                 <input class="form-check-input" type="checkbox" id="device-{{ device.id }}" 
                        {% if device.state == 1 %}checked{% endif %}
                        onchange="toggleDevice({{ device.id }})">
+                <label class="form-check-label" for="device-{{ device.id }}">Toggle</label>
               </div>
-
-            {% elif device.type in ["Switch", "Relay"] %}
-              <!-- Switch/Relay Control: Checkbox for ON/OFF -->
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="device-{{ device.id }}" 
-                       {% if device.default_state == 'ON' %}checked{% endif %}
-                       onchange="toggleDevice({{ device.id }})">
-                <label class="form-check-label" for="device-{{ device.id }}">Power</label>
-              </div>
-
-            {% elif device.type == "DHT sensor" %}
-              <!-- DHT Sensor: Display for temperature and humidity -->
-              <div class="sensor-display d-flex align-items-center">
-                <p class="mb-0 me-3"><i class="fas fa-thermometer-half text-primary me-1"></i> Temp: {{ device.temperature }}°C</p>
-                <p class="mb-0"><i class="fas fa-tint text-info me-1"></i> Humidity: {{ device.humidity }}%</p>
-              </div>
-
-            {% elif device.type == "Other PWM" %}
-              <!-- Other PWM Control: Slider -->
-              <label for="pwm-{{ device.id }}" class="form-label me-2">PWM Control</label>
-              <input type="range" class="form-range" min="0" max="100" id="pwm-{{ device.id }}" 
-                     value="{{ device.pwm or 50 }}" 
-                     oninput="adjustPWM({{ device.id }})">
-
-            {% elif device.type == "Other Sensor" %}
-              <!-- Other Sensor: Display sensor reading with a generic icon -->
-              <p class="fs-6 mb-0">
-                <i class="fas fa-microchip text-secondary me-1"></i> Reading: {{ device.reading }} {{ device.unit }}
+            {% elif device.type == "LED Brightness" or device.type == "PWM Controlled" %}
+              <!-- Slider for brightness or PWM controlled devices -->
+              <label for="brightness-{{ device.id }}" class="form-label">Brightness</label>
+              <input type="range" class="form-range" min="0" max="100" id="brightness-{{ device.id }}" 
+                     value="{{ device.state }}" 
+                     oninput="adjustBrightness({{ device.id }})">
+            {% elif device.type in ["Temp sensor", "Humidity sensor", "Current sensor", "Voltage sensor"] %}
+              <!-- Display for sensors with readings -->
+              <p class="fs-6" id="sensor-{{ device.id }}-reading">
+                {{ device.reading }} {{ device.unit }}
               </p>
+              <button class="btn btn-info btn-sm" onclick="fetchSensorData({{ device.id }})">Refresh</button>
             {% endif %}
           </div>
-          
         </div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-</div>
+  </div>  
   
   <!-- Add Device Modal -->
   <div class="modal fade" id="addDeviceModal" tabindex="-1" aria-labelledby="addDeviceModalLabel" aria-hidden="true">
@@ -369,41 +342,16 @@
                 <option value="LED">LED</option>
                 <option value="Switch">Switch</option>
                 <option value="Relay">Relay</option>
-                <option value="DHT">DHT Sensor</option>
-                <option value="Power">Power</option>
+                <option value="Temp sensor">Temperature Sensor</option>
+                <option value="Humidity sensor">Humidity Sensor</option>
+                <option value="Current sensor">Current Sensor</option>
+                <option value="Voltage sensor">Voltage Sensor</option>
                 <option value="Others">Others</option>
               </select>
             </div>
             <div class="mb-3">
               <label for="gpio" class="form-label">GPIO</label>
-              <select class="form-select" name="gpio" id="gpio" required>
-                <option value=2>GPIO2 (pin3)</option>
-                <option value=3>GPIO3 (pin5)</option>
-                <option value=3>GPIO4 (pin7)</option>
-                <option value=5>GPIO5 (pin29)</option>
-                <option value=6>GPIO6 (pin31)</option>
-                <option value=7>GPIO7 (pin26)</option>
-                <option value=8>GPIO8 (pin24)</option>
-                <option value=9>GPIO9 (pin21)</option>
-                <option value=10>GPIO10 (pin19)</option>
-                <option value=11>GPIO11 (pin23)</option>
-                <option value=12>GPIO12 (pin32)</option>
-                <option value=13>GPIO13 (pin33)</option>
-                <option value=14>GPIO14 (pin8)</option>
-                <option value=15>GPIO15 (pin10)</option>
-                <option value=16>GPIO16 (pin36)</option>
-                <option value=17>GPIO17 (pin11)</option>
-                <option value=18>GPIO18 (pin12)</option>
-                <option value=19>GPIO19 (pin35)</option>
-                <option value=20>GPIO20 (pin38)</option>
-                <option value=21>GPIO21 (pin40)</option>
-                <option value=22>GPIO22 (pin15)</option>
-                <option value=23>GPIO23 (pin16)</option>
-                <option value=24>GPIO24 (pin18)</option>
-                <option value=25>GPIO25 (pin22)</option>
-                <option value=26>GPIO26 (pin37)</option>
-                <option value=27>GPIO27 (pin13)</option>
-              </select>
+              <input type="number" class="form-control" id="gpio" name="gpio" required>
             </div>
             <div class="mb-3">
               <label for="default_state" class="form-label">Default State</label>
