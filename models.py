@@ -34,7 +34,7 @@ class Device(Base):
     state = Column(Integer)
 
     def __repr__(self):
-        return f"<Device name={self.device_name}, type={self.type}, GPIO_pin={self.gpio_pin}, state={self.state}>"
+        return f"<Device id={self.id} name={self.device_name}, type={self.type}, GPIO_pin={self.gpio_pin}, state={self.state}>"
     
 # Initialize the database (create tables)
 Base.metadata.create_all(engine)

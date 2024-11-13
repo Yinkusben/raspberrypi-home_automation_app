@@ -1,18 +1,26 @@
-from models import Device, session
 from gpiozero import LED, PWMLED
+import adafruit_dht
+from models import Device, session
+from sqlalchemy.exc import IntegrityError
 
 # Device set_up and control section
 def setup_devices():
     global LED_devices
     LED_devices = {}
+    global DHT_devcies
+    DHT_devices = {}
 
     for device in get_all_device():
         print(f"Initializing device: {device.device_name}")
 
-        if device.type == 'LED': #Check if device is a PWM device and create a PWM instance
+        if device.type == 'LED': #Check if device is a an LED and create an LED instance
             LED_device = PWMLED(device.gpio_pin)
             LED_devices[device.id] = LED_device
             control_device(device.id, device.state)
+
+        if device.type == 'DHT':    #Check if device is a DHT sensor and create an DHT instance
+            dht_device = adafruit_dht.DHT11(device.gpio_pin)
+            DHT_devices[device.id] = dht_device
 
         # if device.type in ['Switch', 'Relay']: #Initialize device to state
         #     GPIO.setup(device.gpio_pin, GPIO.OUT)
@@ -20,6 +28,11 @@ def setup_devices():
 
 #Create a device
 def create_device(board, name, type, gpio_pin):
+    #Check if the GPIO is already in use by another device
+    existing_device = session.query(Device).filter_by(gpio_pin=gpio_pin).first()
+    if existing_device:
+        return f"Error: GPIO pin {gpio_pin} is already assigned to device '{existing_device.device_name}'."
+    
     new_device = Device(
         board = board,
         device_name = name,
@@ -28,8 +41,14 @@ def create_device(board, name, type, gpio_pin):
         state = 0
     )
 
-    session.add(new_device)
-    session.commit()
+    try:
+        # Add the new device to the session and commit
+        session.add(new_device)
+        session.commit()
+        return f"Device '{name}' successfully added on GPIO pin {gpio_pin}."
+    except IntegrityError:
+        session.rollback()
+        return "Error: Could not add device due to a database integrity issue."
 
 #Function to delete a single device
 def delete_device(device_id):
@@ -43,6 +62,16 @@ def delete_device(device_id):
         session.commit()
         return True
     return "Error, no such device"
+
+def edit_device(device_id, device_name=None, gpio_pin=None):
+    device = session.query(Device).filter_by(id=device_id).first()
+    if device:
+        device.device_name = device_name if device_name else device.device_name
+        device.gpio_pin = gpio_pin if gpio_pin else device.gpio_pin
+        session.commit()
+        return f"Device id {device_id} updated"
+    
+    return f"Error, no such device id {device_id}"
 
 #Function to get a single device
 def get_device(device_id):

@@ -84,9 +84,9 @@ def add_device():
 # Handle device ON/OFF control
 @socketio.on('toggle_device')
 def toggle_device(data):
-    print('toggling')
     device_id = data.get('device_id')
     state = data.get('state')
+    print(f"toggling GPIO {device_id}")
     
     if automation.control_device(device_id, state):
         emit('device_state_updated', {'device_id': device_id, 'new_state': state}, broadcast=True)
@@ -96,17 +96,17 @@ def toggle_device(data):
 # Handle brightness control for PWM devices
 @socketio.on('adjust_brightness')
 def adjust_brightness(data):
-    print("Adjusing brightness")
     device_id = data.get('device_id')
     brightness = data.get('brightness')
+    # print("Adjusing brightness GPIO {devcie_id}")
 
     if automation.control_device(device_id, brightness):
         emit('brightness_updated', {'device_id': device_id, 'brightness': brightness}, broadcast=True)
 
-# @app.teardown_appcontext
-# def cleanup_gpio(exception=None):
-#     automation.cleanup()
-#     print("GPIO resources released")
+@app.teardown_appcontext
+def cleanup_gpio(exception=None):
+    # automation.cleanup()
+    print("Teardown triggered")
 
 if __name__ == '__main__':
     # app.run(debug=True, host='0.0.0.0', port=8000)
